@@ -1,0 +1,12 @@
+news-rss/
+  feeds/
+    politika.xml
+    dunya.xml
+    ekonomi.xml
+  src/
+    build_rss.py
+    sources.txt
+  .github/
+    workflows/
+      build.yml
+  index.html
