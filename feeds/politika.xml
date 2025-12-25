@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+  <channel>
+    <title>Demokratik Birlik - Politika</title>
+    <link>https://cetinboz14012009-sv.github.io/New-RSS/</link>
+    <description>Güncel politik haberler</description>
+    <language>tr</language>
+
+    <item>
+      <title>Örnek Haber Başlığı</title>
+      <description>Bu bir test haberidir. RSS sistemi çalışıyor.</description>
+      <link>https://cetinboz14012009-sv.github.io/New-RSS/</link>
+      <guid>test-001</guid>
+      <pubDate>Thu, 25 Dec 2025 16:00:00 GMT</pubDate>
+    </item>
+
+  </channel>
+</rss>
