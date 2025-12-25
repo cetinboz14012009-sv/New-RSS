@@ -1,2 +1,23 @@
 https://feeds.bbci.co.uk/news/world/rss.xml
 https://rss.cnn.com/rss/edition_world.rss
+# Türkiye
+https://www.birgun.net/rss
+https://www.evrensel.net/rss
+https://www.gazeteduvar.com.tr/rss
+https://www.t24.com.tr/rss
+https://www.bianet.org/biamag.rss
+
+# Uluslararası - İngilizce
+https://www.theguardian.com/world/rss
+https://www.aljazeera.com/xml/rss/all.xml
+https://www.reuters.com/rssFeed/worldNews
+https://rss.nytimes.com/services/xml/rss/nyt/World.xml
+
+# Fransızca
+https://www.lemonde.fr/rss/une.xml
+https://www.france24.com/fr/rss
+https://www.liberation.fr/rss/
+
+# Arapça
+https://www.aljazeera.net/aljazeera/rss
+https://arabic.rt.com/rss/
