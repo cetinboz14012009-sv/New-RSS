@@ -1,0 +1,2 @@
+https://feeds.bbci.co.uk/news/world/rss.xml
+https://rss.cnn.com/rss/edition_world.rss
