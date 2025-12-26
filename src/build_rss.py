@@ -68,7 +68,11 @@ def build_feed(items):
         ET.SubElement(i, "guid").text = hashlib.sha1(it["guid"].encode()).hexdigest()
         if it["pubDate"]:
             ET.SubElement(i, "pubDate").text = it["pubDate"]
-        ET.SubElement(i, "description").text = "Ham haber – düzenlenecek"
+   ET.SubElement(i, "description").text = (
+    "Ham haber – düzenlenecek"
+    "<br/><strong style='color:black;'>DB Haber Servisi</strong>"
+)
+
 
     return ET.tostring(rss, encoding="utf-8", xml_declaration=True).decode("utf-8")
 
