@@ -1,121 +1,103 @@
-import os
-import hashlib
-import datetime
+import os, hashlib, datetime
 import xml.etree.ElementTree as ET
 from urllib.request import urlopen, Request
-from xml.sax.saxutils import escape
+from email.utils import parsedate_to_datetime
 
-# =====================
-# AYARLAR
-# =====================
-OUT_FILE = os.path.join("feeds", "havuz.xml")
-MAX_ITEMS = 50
-
-SIGNATURE_HTML = "<br/><strong style='color:black;'>DB Haber Servisi</strong>"
-
+MAX_ITEMS = 30
+OUT_FILE = os.path.join("feeds", "politika.xml")
 
 def fetch(url: str) -> bytes:
-    req = Request(url, headers={"User-Agent": "Mozilla/5.0 (rss-bot)"})
+    req = Request(url, headers={"User-Agent": "news-rss-bot/1.0"})
     with urlopen(req, timeout=30) as r:
         return r.read()
 
+def text(el, default=""):
+    return el.text.strip() if el is not None and el.text else default
 
-def parse_rss(xml_bytes: bytes):
-    """Sadece RSS 2.0 <channel><item>...</item> formatını okur."""
-    try:
-        root = ET.fromstring(xml_bytes)
-    except Exception:
-        return []
-
+def parse_rss(xml_bytes):
+    root = ET.fromstring(xml_bytes)
     channel = root.find("channel")
     if channel is None:
         return []
 
     items = []
     for item in channel.findall("item"):
-        title = (item.findtext("title") or "").strip()
-        link = (item.findtext("link") or "").strip()
-        pub = (item.findtext("pubDate") or "").strip()
-        guid = (item.findtext("guid") or "").strip() or link or title
+        title = text(item.find("title"))
+        link = text(item.find("link"))
+        pub = text(item.find("pubDate"))
+        guid = text(item.find("guid")) or link or title
 
         if title and link:
-            items.append(
-                {"title": title, "link": link, "pubDate": pub, "guid": guid}
-            )
+            items.append({
+                "title": title,
+                "link": link,
+                "pubDate": pub,
+                "guid": guid
+            })
     return items
 
+def parse_date(pub):
+    try:
+        d = parsedate_to_datetime(pub)
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=datetime.timezone.utc)
+        return d
+    except:
+        return datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
 
-def sha1(s: str) -> str:
-    return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
+def build(items):
+    rss = ET.Element("rss", version="2.0")
+    channel = ET.SubElement(rss, "channel")
 
+    ET.SubElement(channel, "title").text = "Demokratik Birlik - Politika"
+    ET.SubElement(channel, "link").text = "https://cetinboz14012009-sv.github.io/New-RSS/"
+    ET.SubElement(channel, "description").text = "Otomatik haber havuzu (son 30 haber)"
+    ET.SubElement(channel, "language").text = "tr"
+    ET.SubElement(channel, "lastBuildDate").text = datetime.datetime.utcnow().strftime(
+        "%a, %d %b %Y %H:%M:%S GMT"
+    )
 
-def build_rss_xml(items):
-    """RSS çıktısını string olarak üretir (description içinde CDATA ile HTML korunur)."""
-    now = datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    for item in items[:MAX_ITEMS]:
+        i = ET.SubElement(channel, "item")
+        ET.SubElement(i, "title").text = item["title"]
+        ET.SubElement(i, "link").text = item["link"]
+        ET.SubElement(i, "guid").text = hashlib.sha1(item["guid"].encode()).hexdigest()
+        if item["pubDate"]:
+            ET.SubElement(i, "pubDate").text = item["pubDate"]
+        ET.SubElement(i, "description").text = "Ham haber – editör onayı bekliyor."
 
-    parts = []
-    parts.append('<?xml version="1.0" encoding="UTF-8"?>')
-    parts.append('<rss version="2.0">')
-    parts.append("<channel>")
-    parts.append("<title>Demokratik Birlik - Havuz</title>")
-    parts.append("<link>https://cetinboz14012009-sv.github.io/New-RSS/</link>")
-    parts.append("<description>Kaynaklardan otomatik toplanan ham haber havuzu</description>")
-    parts.append("<language>tr</language>")
-    parts.append(f"<lastBuildDate>{escape(now)}</lastBuildDate>")
-
-    for it in items[:MAX_ITEMS]:
-        title = escape(it["title"])
-        link = escape(it["link"])
-        guid = sha1(it["guid"])
-        pub = escape(it["pubDate"]) if it["pubDate"] else ""
-
-        # Description: CDATA içinde HTML (br + siyah kalın imza)
-        desc_html = "Ham haber – düzenlenecek" + SIGNATURE_HTML
-
-        parts.append("<item>")
-        parts.append(f"<title>{title}</title>")
-        parts.append(f"<link>{link}</link>")
-        parts.append(f"<guid>{guid}</guid>")
-        if pub:
-            parts.append(f"<pubDate>{pub}</pubDate>")
-        parts.append(f"<![CDATA[{desc_html}]]>".replace("<![CDATA[", "<description><![CDATA[").replace("]]>", "]]></description>"))
-        parts.append("</item>")
-
-    parts.append("</channel>")
-    parts.append("</rss>")
-
-    return "\n".join(parts)
-
+    return ET.tostring(rss, encoding="utf-8", xml_declaration=True).decode("utf-8")
 
 def main():
     os.makedirs("feeds", exist_ok=True)
 
-    with open(os.path.join("src", "sources.txt"), "r", encoding="utf-8") as f:
-        urls = [x.strip() for x in f if x.strip() and not x.strip().startswith("#")]
+    with open("src/sources.txt", "r", encoding="utf-8") as f:
+        sources = [s.strip() for s in f if s.strip()]
 
     all_items = []
-    for u in urls:
+    for src in sources:
         try:
-            all_items.extend(parse_rss(fetch(u)))
+            all_items.extend(parse_rss(fetch(src)))
         except Exception as e:
-            print("FAIL:", u, e)
+            print("Hata:", src, e)
 
-    # Duplicate temizliği (link üzerinden)
+    # tekrarları temizle
     seen = set()
     unique = []
-    for it in all_items:
-        if it["link"] in seen:
-            continue
-        seen.add(it["link"])
-        unique.append(it)
+    for i in all_items:
+        if i["link"] not in seen:
+            seen.add(i["link"])
+            unique.append(i)
 
-    xml_out = build_rss_xml(unique)
+    # EN YENİLER EN ÜSTTE
+    unique.sort(key=lambda x: parse_date(x.get("pubDate")), reverse=True)
+
+    xml = build(unique)
 
     with open(OUT_FILE, "w", encoding="utf-8") as f:
-        f.write(xml_out)
+        f.write(xml)
 
-    print("updated:", OUT_FILE)
-    print("sources:", len(urls), "raw_items:", len(all_items), "unique_items:", len(unique))
+    print("RSS güncellendi:", OUT_FILE)
 
 
 if __name__ == "__main__":
