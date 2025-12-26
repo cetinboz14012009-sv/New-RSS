@@ -21,3 +21,4 @@ https://www.liberation.fr/rss/
 # Arapça
 https://www.aljazeera.net/aljazeera/rss
 https://arabic.rt.com/rss/
+https://anfenglish.com/rss
