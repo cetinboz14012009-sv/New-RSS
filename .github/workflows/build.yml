@@ -1,36 +1,13 @@
-name: Build RSS
-
-on:
-  schedule:
-    - cron: "*/30 * * * *"
-  workflow_dispatch: {}
-
-permissions:
-  contents: write
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Run builder
-        run: python src/build_rss.py
-
-      - name: Commit and push
+- name: Commit and push
         run: |
           git config user.name "rss-bot"
           git config user.email "rss-bot@users.noreply.github.com"
-          git status
+
           git add feeds/*.xml
           git commit -m "Update feeds" || echo "No changes"
+
+          # Remote'u al, kendi commitini onun üstüne koy
+          git pull --rebase origin main
+
+          # Sonra push
           git push origin HEAD:main
