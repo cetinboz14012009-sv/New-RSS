@@ -27,6 +27,9 @@ jobs:
 
       - name: Run builder
         run: python src/build_rss.py
+      
+      - name: Trim politika feed
+        run: python src/trim_politika.py
 
       - name: Commit and push
         run: |
